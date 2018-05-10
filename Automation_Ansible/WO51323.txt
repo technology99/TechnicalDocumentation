@@ -1,0 +1,180 @@
+Req. Devops Manager,
+Symptom : please help reset Sandeep's password
+using the password for Sandeep.nair on serverapesb16, please update his password on the following hosts	  
+-----------------------------------------------------------------------------------------------------
+[root@serverapesb16 ~]# grep nair /etc/passwd
+Sandeep.nair:x:5030:100:ESB Developer:/home/Sandeep.nair:/bin/bash
+[root@serverapesb16 ~]# grep nair /etc/shadow
+Sandeep.nair:$6$eJrVSsgk$zcn3X3WMb7pCsa3rjE5lEIjdF7oxhTJU6Iuvh60yxZiZ7pMogJnnf5cj/nMf9XfWtaxam0KnStTFIaiLCzEwZ.:17011:0:99999:7:::
+-----------------------------------------------------------------------------------------------------
+
+\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\
+
+>>> Ansible host error <<<
+fatal: [10.20.44.136] => Using a SSH password instead of a key is not 
+possible because Host Key checking is enabled and sshpass 
+does not support this.  Please add this host's fingerprint to your 
+known_hosts file to manage this host.
+
+>>> Ansible host solution <<<
+juant@serverjmp01:~/working_copy$ ssh root@10.20.44.35
+The authenticity of host '10.20.44.35 (10.20.44.35)' can't be established.
+ECDSA key fingerprint is 89:05:ee:0a:41:03:8e:d3:36:34:55:0a:a6:79:3e:17.
+Are you sure you want to continue connecting (yes/no)? yes
+Warning: Permanently added '10.20.44.35' (ECDSA) to the list of known hosts.
+Password:
+Last login: Wed Jun 22 16:43:18 2016 from serverjmp01.mycompanyus.com
+serverqesb01:~ #
+\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\
+
+[root@sandman working_copy]# cat WO51323.yml
+---
+
+- hosts: [all]
+  tasks:
+  - name: Reset dood's password
+    user: name=Sandeep.nair update_password=always password=$6$eJrVSsgk$zcn3X3WMb7pCsa3rjE5lEIjdF7oxhTJU6Iuvh60yxZiZ7pMogJnnf5cj/nMf9XfWtaxam0KnStTFIaiLCzEwZ.
+
+
+
+[root@sandman working_copy]# cat inventory/WO51323
+[all]
+#Dev
+#serveradesb01.mycompanyus.com
+10.20.44.22
+#serveradesb06.mycompanyus.com
+10.20.44.71
+#QA
+#serveradesb02.mycompanyus.com
+10.20.44.23
+#EBF
+#serveradesb03.mycompanyus.com
+10.20.44.24
+#Perf
+#serverapesb04.mycompanyus.com
+10.20.44.136
+#serverapesb05.mycompanyus.com
+10.20.44.137
+#serverapesb09.mycompanyus.com
+10.20.44.138
+#tewuvatesb01.mycompanyus.com
+10.20.44.143
+#tewuvatesb02.mycompanyus.com
+10.20.44.144
+#Prod
+#serverapesb06.mycompanyus.com
+10.20.45.21
+#serverapesb07.mycompanyus.com
+10.20.45.22
+#serverapesb08.mycompanyus.com
+10.20.45.23
+#serverapesb10.mycompanyus.com
+10.20.45.27
+#serverapesb11.mycompanyus.com
+10.20.45.28
+#serverapesb12.mycompanyus.com
+10.20.45.29
+#serverapesb13.mycompanyus.com
+10.20.45.30
+#New QA
+#serverqesb01
+10.20.44.35
+
+
+[root@sandman working_copy]# ansible-playbook -i inventory/WO51323 ./WO51323.yml -u root --check -vvvv -k
+Using /etc/ansible/ansible.cfg as config file
+SSH password:
+Loaded callback default of type stdout, v2.0
+
+PLAYBOOK: WO51323.yml **********************************************************
+1 plays in ./WO51323.yml
+
+PLAY [all] *********************************************************************
+
+TASK [setup] *******************************************************************
+<10.20.44.71> ESTABLISH SSH CONNECTION FOR USER: root
+<10.20.44.24> ESTABLISH SSH CONNECTION FOR USER: root
+<10.20.44.23> ESTABLISH SSH CONNECTION FOR USER: root
+<10.20.44.22> ESTABLISH SSH CONNECTION FOR USER: root
+<10.20.44.136> ESTABLISH SSH CONNECTION FOR USER: root
+<10.20.44.24> SSH: EXEC sshpass -d23 ssh -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root -o ConnectTimeout=3 -     o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r 10.20.44.24 '/bin/sh -c '"'"'( umask 77 && mkdir -p "` echo $HOME/.ansible/tmp/ansibl     e-tmp-1470420013.6-260670544054851 `" && echo ansible-tmp-1470420013.6-260670544054851="` echo $HOME/.ansible/tmp/ansible-tmp-1470420013.6-2     60670544054851 `" ) && sleep 0'"'"''
+<10.20.44.71> SSH: EXEC sshpass -d21 ssh -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root -o ConnectTimeout=3 -     o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r 10.20.44.71 '/bin/sh -c '"'"'( umask 77 && mkdir -p "` echo $HOME/.ansible/tmp/ansibl     e-tmp-1470420013.6-54482753584127 `" && echo ansible-tmp-1470420013.6-54482753584127="` echo $HOME/.ansible/tmp/ansible-tmp-1470420013.6-544     82753584127 `" ) && sleep 0'"'"''
+<10.20.44.23> SSH: EXEC sshpass -d22 ssh -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root -o ConnectTimeout=3 -     o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r 10.20.44.23 '/bin/sh -c '"'"'( umask 77 && mkdir -p "` echo $HOME/.ansible/tmp/ansibl     e-tmp-1470420013.6-49682672473626 `" && echo ansible-tmp-1470420013.6-49682672473626="` echo $HOME/.ansible/tmp/ansible-tmp-1470420013.6-496     82672473626 `" ) && sleep 0'"'"''
+<10.20.44.136> SSH: EXEC sshpass -d24 ssh -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root -o ConnectTimeout=3      -o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r 10.20.44.136 '/bin/sh -c '"'"'( umask 77 && mkdir -p "` echo $HOME/.ansible/tmp/ansi     ble-tmp-1470420013.6-28149016865314 `" && echo ansible-tmp-1470420013.6-28149016865314="` echo $HOME/.ansible/tmp/ansible-tmp-1470420013.6-2     8149016865314 `" ) && sleep 0'"'"''
+<10.20.44.22> SSH: EXEC sshpass -d20 ssh -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root -o ConnectTimeout=3 -     o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r 10.20.44.22 '/bin/sh -c '"'"'( umask 77 && mkdir -p "` echo $HOME/.ansible/tmp/ansibl     e-tmp-1470420013.6-243834587910688 `" && echo ansible-tmp-1470420013.6-243834587910688="` echo $HOME/.ansible/tmp/ansible-tmp-1470420013.6-2     43834587910688 `" ) && sleep 0'"'"''
+<10.20.44.24> PUT /tmp/tmpFV_OcI TO /root/.ansible/tmp/ansible-tmp-1470420013.6-260670544054851/setup
+<10.20.44.23> PUT /tmp/tmpSyUJxG TO /root/.ansible/tmp/ansible-tmp-1470420013.6-49682672473626/setup
+<10.20.44.23> SSH: EXEC sshpass -d22 sftp -o BatchMode=no -b - -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root      -o ConnectTimeout=3 -o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r '[10.20.44.23]'
+<10.20.44.24> SSH: EXEC sshpass -d23 sftp -o BatchMode=no -b - -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root      -o ConnectTimeout=3 -o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r '[10.20.44.24]'
+<10.20.44.136> PUT /tmp/tmpQppX3t TO /root/.ansible/tmp/ansible-tmp-1470420013.6-28149016865314/setup
+<10.20.44.136> SSH: EXEC sshpass -d24 sftp -o BatchMode=no -b - -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=roo     t -o ConnectTimeout=3 -o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r '[10.20.44.136]'
+<10.20.44.71> PUT /tmp/tmpPqLxLl TO /root/.ansible/tmp/ansible-tmp-1470420013.6-54482753584127/setup
+<10.20.44.71> SSH: EXEC sshpass -d21 sftp -o BatchMode=no -b - -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root      -o ConnectTimeout=3 -o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r '[10.20.44.71]'
+<10.20.44.22> PUT /tmp/tmpnIRIIr TO /root/.ansible/tmp/ansible-tmp-1470420013.6-243834587910688/setup
+<10.20.44.22> SSH: EXEC sshpass -d20 sftp -o BatchMode=no -b - -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root      -o ConnectTimeout=3 -o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r '[10.20.44.22]'
+<10.20.44.23> ESTABLISH SSH CONNECTION FOR USER: root
+<10.20.44.23> SSH: EXEC sshpass -d22 ssh -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root -o ConnectTimeout=3 -     o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r -tt 10.20.44.23 '/bin/sh -c '"'"'LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LC_MESSAGES=en_U     S.UTF-8 /usr/bin/python /root/.ansible/tmp/ansible-tmp-1470420013.6-49682672473626/setup; rm -rf "/root/.ansible/tmp/ansible-tmp-1470420013.     6-49682672473626/" > /dev/null 2>&1 && sleep 0'"'"''
+<10.20.44.24> ESTABLISH SSH CONNECTION FOR USER: root
+<10.20.44.24> SSH: EXEC sshpass -d23 ssh -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root -o ConnectTimeout=3 -     o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r -tt 10.20.44.24 '/bin/sh -c '"'"'LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LC_MESSAGES=en_U     S.UTF-8 /usr/bin/python /root/.ansible/tmp/ansible-tmp-1470420013.6-260670544054851/setup; rm -rf "/root/.ansible/tmp/ansible-tmp-1470420013     .6-260670544054851/" > /dev/null 2>&1 && sleep 0'"'"''
+<10.20.44.136> ESTABLISH SSH CONNECTION FOR USER: root
+<10.20.44.136> SSH: EXEC sshpass -d24 ssh -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root -o ConnectTimeout=3      -o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r -tt 10.20.44.136 '/bin/sh -c '"'"'LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LC_MESSAGES=en     _US.UTF-8 /usr/bin/python /root/.ansible/tmp/ansible-tmp-1470420013.6-28149016865314/setup; rm -rf "/root/.ansible/tmp/ansible-tmp-147042001     3.6-28149016865314/" > /dev/null 2>&1 && sleep 0'"'"''
+<10.20.44.71> ESTABLISH SSH CONNECTION FOR USER: root
+<10.20.44.71> SSH: EXEC sshpass -d21 ssh -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root -o ConnectTimeout=3 -     o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r -tt 10.20.44.71 '/bin/sh -c '"'"'LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LC_MESSAGES=en_U     S.UTF-8 /usr/bin/python /root/.ansible/tmp/ansible-tmp-1470420013.6-54482753584127/setup; rm -rf "/root/.ansible/tmp/ansible-tmp-1470420013.     6-54482753584127/" > /dev/null 2>&1 && sleep 0'"'"''
+<10.20.44.22> ESTABLISH SSH CONNECTION FOR USER: root
+<10.20.44.22> SSH: EXEC sshpass -d20 ssh -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root -o ConnectTimeout=3 -     o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r -tt 10.20.44.22 '/bin/sh -c '"'"'LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8 LC_MESSAGES=en_U     S.UTF-8 /usr/bin/python /root/.ansible/tmp/ansible-tmp-1470420013.6-243834587910688/setup; rm -rf "/root/.ansible/tmp/ansible-tmp-1470420013     .6-243834587910688/" > /dev/null 2>&1 && sleep 0'"'"''
+<10.20.44.137> ESTABLISH SSH CONNECTION FOR USER: root
+<10.20.44.137> SSH: EXEC sshpass -d24 ssh -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root -o ConnectTimeout=3 -o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r 10.20.44.137 '/bin/sh -c '"'"'( umask 77 && mkdir -p "` echo $HOME/.ansible/tmp/ansible-tmp-1470420020.88-129825851276519 `" && echo ansible-tmp-1470420020.88-129825851276519="` echo $HOME/.ansible/tmp/ansible-tmp-1470420020.88-129825851276519 `" ) && sleep 0'"'"''
+<10.20.44.138> ESTABLISH SSH CONNECTION FOR USER: root
+<10.20.44.138> SSH: EXEC sshpass -d24 ssh -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root -o ConnectTimeout=3 -o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r 10.20.44.138 '/bin/sh -c '"'"'( umask 77 && mkdir -p "` echo $HOME/.ansible/tmp/ansible-tmp-1470420021.57-103111903231604 `" && echo ansible-tmp-1470420021.57-103111903231604="` echo $HOME/.ansible/tmp/ansible-tmp-1470420021.57-103111903231604 `" ) && sleep 0'"'"''
+<10.20.44.137> PUT /tmp/tmprYsHPS TO /root/.ansible/tmp/ansible-tmp-1470420020.88-129825851276519/setup
+<10.20.44.137> SSH: EXEC sshpass -d24 sftp -o BatchMode=no -b - -C -vvv -o ControlMaster=auto -o ControlPersist=60s -o Port=22 -o User=root -o ConnectTimeout=3 -o ControlPath=/root/.ansible/cp/ansible-ssh-%h-%p-%r '[10.20.44.137]'
+ok: [10.20.44.22]
+
+>>>>>>> continue <<<<<<<
+
+PLAY RECAP *********************************************************************
+10.20.44.136             : ok=2    changed=1    unreachable=0    failed=0
+10.20.44.137             : ok=2    changed=1    unreachable=0    failed=0
+10.20.44.138             : ok=2    changed=1    unreachable=0    failed=0
+10.20.44.143             : ok=2    changed=1    unreachable=0    failed=0
+10.20.44.144             : ok=2    changed=1    unreachable=0    failed=0
+10.20.44.22              : ok=2    changed=1    unreachable=0    failed=0
+10.20.44.23              : ok=2    changed=1    unreachable=0    failed=0
+10.20.44.24              : ok=2    changed=1    unreachable=0    failed=0
+10.20.44.35              : ok=0    changed=0    unreachable=1    failed=0
+10.20.44.71              : ok=2    changed=1    unreachable=0    failed=0
+10.20.45.21              : ok=2    changed=1    unreachable=0    failed=0
+10.20.45.22              : ok=2    changed=1    unreachable=0    failed=0
+10.20.45.23              : ok=2    changed=1    unreachable=0    failed=0
+10.20.45.27              : ok=2    changed=1    unreachable=0    failed=0
+10.20.45.28              : ok=2    changed=1    unreachable=0    failed=0
+10.20.45.29              : ok=2    changed=1    unreachable=0    failed=0
+10.20.45.30              : ok=2    changed=1    unreachable=0    failed=0
+
+
+\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\
+
+[root@sandman mycompany_users]# pwd
+/opt/mycompany-chef-repo/data_bags/mycompany_users
+
+[root@sandman mycompany_users]# grep Sandeep.nair *
+Sandeep.nair.json:  "id": "Sandeep.nair",
+
+
+*\*\*\*\*  Add email column to the json file *\*\*\*\*
+
+git add Sandeep.nair.json
+git commit -m "Add Sandeep.nair email string to the data_bag file - Ref WO51323"
+
+git push
+
+[root@sandman mycompany_users]# grep email Sandeep.nair.json
+  "email": "Sandeep.Nair@mycompany.com",
+
+knife data bag from file mycompany_users Sandeep.nair.json
+
+
+\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\*\
+
+
+

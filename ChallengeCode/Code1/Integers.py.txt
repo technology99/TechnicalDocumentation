@@ -1,0 +1,47 @@
+## Given a list of integers as input, find the last longest sequence of numbers which are consecutive.
+## Test case 1:
+## Input: [2, 5, 1, 6, 7, 9, 8, 14]
+## Output: [5, 6, 7, 8, 9]
+## Test case 2:
+## Input: [1, 5, 2, 6, 9, 8]
+## Output: [8, 9]
+input_list = [2, 5, 1, 6, 7, 9, 8, 14, 8, 8]
+
+def find(input_list):
+    #i = input_list.split(",")
+    #input_set = set(input_)
+    seen = set()
+    newlist = []
+    result_list = []
+    for n in input_list:
+        if n not in seen:
+            current = n
+            seen.add(current)
+            newlist.append(current)
+            # Check n-1
+            #print seen
+            #print newlist
+            #print current
+            current = current - 1
+            #print("checking " + str(current))
+            while current in input_list:
+                seen.add(current)
+                newlist.insert(0, current)
+                current = current - 1
+                #print(newlist)
+            current2 = n + 1
+            #print("search finish for numbers smaller than n")
+            while current2 in input_list:
+                seen.add(current2)
+                newlist.append(current2)
+                current2 = current2 + 1
+                #print(newlist)
+            if len(result_list) < len(newlist):
+                result_list = newlist
+                newlist = []
+
+
+    return result_list
+
+print("Result is :")
+print find(input_list)

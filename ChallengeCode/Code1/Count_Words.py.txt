@@ -1,0 +1,20 @@
+## This is the text editor interface. 
+## Anything you type or change here will be seen by the other person in real time.
+
+# “when you come in on monday and you're not feeling real well does anyone ever say to you sounds like someone has a case of the mondays”
+
+# Count the number of words in the string
+# Count the number of times each word is used in the string
+
+k = {}
+string = "when you come in on monday and you're not feeling real well does anyone ever say to you sounds like someone has a case of the Mondays"
+l = len(string.split())
+for w in string.split():
+   if w in k:
+       k[w] += 1 # same word multime times
+   else:
+       k[w] = 1  # found once
+for wd, tm in k.items():
+   print "%s => %d" % (wd,tm)
+print "Number of words %d " % l
+

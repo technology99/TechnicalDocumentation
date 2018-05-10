@@ -1,0 +1,32 @@
+import os
+import hashlib
+
+"""
+Puzzle:
+
+        A Linux directory structure contains 100G worth of files. The
+        depth and number of sub-directories and files is not known.
+        Soft-links and hard-links can also be expected.  Write, in
+        the language of your choice, a program that traverses the
+        whole structure as fast as possible and reports duplicate
+        files. Duplicates are files with same content.
+        Be prepared to discuss the strategy that you've taken and its trade-offs.
+"""
+
+seen  = set()
+c_dir = os.getcwd()
+
+for root,dirs,files in os.walk(c_dir):
+    for f in files:
+        c_file = os.path.join(root,f)
+        h = hashlib.md5()
+
+        with open(c_file) as f_in:
+            h.update(f_in.read())
+
+        if not os.stat(c_file).st_nlink > 1:
+          if not os.path.islink(c_file):
+            if h.hexdigest() not in seen:
+              seen.add(h.hexdigest())
+            else:
+              print c_file,h.hexdigest()

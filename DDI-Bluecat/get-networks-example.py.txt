@@ -1,0 +1,132 @@
+import requests
+import datetime
+
+## Define a Function to call all the <ip4-networks>
+## 
+## Search by Object Types
+## APIcall 
+## API Entry searchByObjectTypes( String keyword, String types, int start, int count )
+## Examples for searchByObjectTypes pg 209
+##   keyword = *
+##   types   = IP4Network
+##   start   = 1
+##   count   = 20
+##
+
+
+def login(host, useraccount, userpassword):
+    url = "http://{0}/Services/REST/v1/login?username={1}&password={2}".format(host,
+                                                                               useraccount,
+                                                                               userpassword)
+    response = requests.get(url)
+    if (response.status_code) != 200:
+        return response.text
+    else:
+        return response.json()
+
+
+def logout(token, host):
+    url = "http://{0}/Services/REST/v1/logout?".format(host)
+    headers = {
+        'Authorization': token,
+    }
+    response = requests.get(url, headers=headers)
+    if (response.status_code) != 200:
+        return response.text
+    else:
+        return response.json()
+
+
+def gettoken(data):
+    token = data.split()[2] + " " + data.split()[3]
+    return token
+
+
+def getNetworks(host, token, id, start, count):
+    url = "http://{}/Services/REST/v1/searchByObjectTypes?keyword=*&types=IP4Network&start={}&count={}&contadinerId={}".format(host, start, count, id)
+
+    headers = {
+        'Reconnect': 'Persist',
+        'Connection': 'Keep-Alive',
+        'Authorization': token,
+        'Content-Type': 'application/json'
+    }
+
+    response = requests.get(url, headers=headers)
+    if (response.status_code) != 200:
+        raise Exception("ERROR: " + response.text)
+    else:
+        return response.json()
+
+
+def renew_token(host, user, passwd):
+    print("Renewing token!")
+    info = login(host, user, passwd)
+    return gettoken(info)
+
+
+def update_start_time(now):
+    start_time = now
+    start_plus_3 = start_time + datetime.timedelta(minutes=3)
+
+
+def get_property(properties, search_prop):
+    for prop in properties.split("|"):
+        if not prop:
+            continue
+        values = prop.split("=")
+        if values[0] in search_prop:
+            return values[1]
+    return None
+
+
+host = "10.244.134.190"
+user, passwd = ("apiuser", "apiuser")
+info = login(host, user, passwd)
+token = gettoken(info)
+
+# this is the result set starting point, not the index number
+start = 0
+
+# number of entities retrieved on each call
+count = 100
+
+#configuration id from BAM
+configid = 47
+
+
+#network list
+networks = []
+
+start_time = datetime.datetime.now()
+start_plus_3 = start_time + datetime.timedelta(minutes=3)
+
+while True:
+    try:
+        now = datetime.datetime.now()
+        # if token was renewed more than 3 minutes ago
+        if now >= start_plus_3:
+            token = renew_token(host, user, passwd)
+            update_start_time(now)
+        data = getNetworks(host, token, configid, start, count)
+
+        # if no more networks
+        if not data:
+            break
+
+        networks.append(data)
+        # increment based on result set size, not in count
+        start += len(data)
+        print("got {} networks already...".format(start))
+    except Exception as e:
+        print(e)
+        break
+
+
+for network_bulk in networks:
+    for network in network_bulk:
+        cidr = get_property(network['properties'], 'CIDR')
+        print(network['id'], network['name'], cidr)
+
+logout(token, host)
+
