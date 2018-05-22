@@ -10,9 +10,9 @@ original array. in this case, it will output (17,14), (17,5), (17, 11),
 (14, 5), (14, 11), (27, 5), (27, 19), (27, 11), (19, 11)
 
 '''
-list1 = (17,14,27,5,19,11)
-for i in list1:
-  x = i
-  for x in list1:
-    if i > x:
-      print(i,x)
+tuple1 = (17,14,27,5,19,11)
+for f in tuple1:
+  n = f
+  for n in tuple1:
+    if f > n:
+      print(f,n)
