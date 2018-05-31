@@ -1,0 +1,7 @@
+rem @ECHO OFF
+X:
+dnscmd localhost /EnumRecords abc.ad.trans.mycompany.com @ /type A,CNAME,AAAA 
+dnscmd localhost /EnumRecords abc.ad.trans.mycompany.com @ /type A,CNAME,AAAA > %SystemRoot%\system32\dns\abc.ad.trans.mycompany.com.csv
+type %SystemRoot%\system32\dns\abc.ad.trans.mycompany.com.csv > x:\bin\abc.ad.trans.mycompany.com 
+del %SystemRoot%\system32\dns\abc.ad.trans.mycompany.com.csv  
+rem @ECHO ON

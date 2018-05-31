@@ -1,0 +1,26 @@
+#!/bin/sh
+
+
+# 1. Check snmp rpms are there or not
+# If snmp rpms are not there, Install the rpms
+#
+
+if [ ! -f /usr/sbin/snmpd ]
+then
+#	echo "$i snmp rpms doesnt exist"
+	rhel_rel=`awk '{ print $7 }' /etc/redhat-release `
+	arch=`uname -m`
+	string="${rhel_rel}_${arch}"
+	
+	# Install the snmp rpms
+	cd /root/work/
+	tar xvf  snmp.tar
+	rpm -ihv --aid /root/work/SNMP_RPMS/${string}/*rpm
+	
+	# Make modification to the /etc/snmp/snmpd.conf
+	cp -p /etc/snmp/snmpd.conf /etc/snmp/snmpd.conf.original
+	cp  SNMP_RPMS/snmpd.conf /etc/snmp/snmpd.conf
+
+	# restart the snmp service
+	service snmpd restart	
+fi

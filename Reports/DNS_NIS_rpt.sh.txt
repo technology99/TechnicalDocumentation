@@ -1,0 +1,714 @@
+#!/bin/bash 
+
+#set -x
+
+#if [ $(id -nu) != "root" ]; then
+#   echo -e "Must run $0 as user root \n";
+#exit 1
+#fi
+
+if [ $(uname) != "Linux" ]; then
+  echo -e "Must run $0 from a Linux box \n";
+fi
+
+# spawn command path
+# export PATH=$PATH:/usr/libexec/postfix:/usr/sfw/bin:/usr/sbin
+
+function ctrl_c() {
+     stty echo;
+     echo "** Manually Trapped CTRL-C" ;
+     #rm -rf $TFILE $html 2>&1 
+     exit 1 ;
+}
+
+
+function uid_passwd() {
+
+pstp[1]="NIS";
+pstp[2]="RSC";
+pstp[3]="iLo";
+
+declare -a u
+declare -a p
+k=4;
+
+for (( c = 1; c < k; c++ ));
+
+do
+   ANS="";
+      tput clear
+      tput cup 1 35 ; echo "MYCOMPANY, LLC"
+      tput cup 2 65 ; echo "NIS Hosts Report"
+      tput cup 3 35 ; echo "______________________________________________"
+      tput cup 5 0  ; echo -e "Enter your \033[1m${pstp[$c]}\033[0m userId & password."
+      tput cup 6 0  ; echo -n "User ID : "
+      read u[$c] ;
+      tput cup 7 0  ; echo -n "Password: ";
+      stty -echo;
+      read p[$c] ;
+      stty echo ;
+      echo ;
+      while [[ $ANS != "y" ]] && [[ $ANS != "n" ]]; do
+          tput cup 9 0 ; echo -n "continue [y/n] "
+          read ANS
+          ANS=$(echo $ANS | tr [A-Z] [a-z])
+      done
+      echo $ANS
+      if [ "${c}" -gt "${k}" ] && [[ $ANS = "n" ]]; then
+        if [ "${c}" -ge "1" ]; then
+             (( c = c - 1 ));
+        fi
+      elif [ "${c}" -lt "${k}" ] && [[ $ANS = "n" ]]; then
+          if [ "${c}" -le "3" ]; then
+              (( c = c - 1 ));
+          fi
+      fi
+done
+echo ${u[@]};
+echo ${p[@]};
+#tput sgr0;
+
+}
+
+function var_init() {
+
+#unset getPING || getPING=
+#unset getIP || getIP=
+#unset getNISIP || getNISIP=
+#unset getNISHN || getNISHN=
+#unset getFQDN  || getFQDN=
+#unset getTLNTcomm || getTLNTcomm=
+#unset getRSC || getRSC=
+#unset getNotRSC || getNotRSC=
+#unset getTLNTos || getTLNTos=
+#unset getSSHos || getSSHos=
+#unset getSSHcomm || getSSHcomm=
+#unset getILO || getILO=
+#unset getNotILO || getNotILO=
+#unset getHTTPS || getHTTPS=
+
+getPING= || unset getPING
+getIP= || unset getIP
+getNISIP= || unset getNISIP
+getNISHN= || unset getNISHN
+getFQDN= || unset getFQDN
+getTLNTcomm= || unset getTLNTcomm
+getRSC= || unset getRSC
+getNotRSC= || unset getNotRSC
+getTLNTos= || unset getTLNTos
+getSSHos= || unset getSSHos
+getSSHcomm= || unset getSSHcomm
+getILO= || unset getILO
+getNotILO= || unset getNotILO
+getHTTPS= || unset getHTTPS 
+
+}
+
+
+function telnet_read() {
+set -x
+#echo "$system" | telnet_comm
+echo "$getIP" | telnet_comm
+
+if [ $? -eq 0 ]; then
+  getTLNTcomm="Connected";
+else
+  getTLNTcomm="Unable to connect";
+fi
+set +x
+}
+
+
+function telnet_comm() {
+
+while read line
+do
+
+   telnet $line | grep -oE 'Connected|Unable to connect'
+
+done
+
+}
+
+
+function telnet_os() {
+set -x
+#getTLNTos=`expect -c "set timeout -1; \
+#                          eval spawn telnet "$getIP"; \
+#                          expect *login:*; \
+#                          send -- root\r; \
+#                          expect *Password:*; \
+#                          send -- one4cad\r; \
+#                          expect #; \
+#                          send -- uname\r; \
+#                          expect #; \
+#                          send -- exit\r; \
+#                          interact;"`
+
+result=$1
+$result &
+pid=$!
+echo "sleep $2; kill $pid" | at now
+wait $pid &> /dev/null
+
+case $? in
+           255) getTLNTos="Refused"
+                ;;
+           143) getTLNTos="Timeout"
+                ;;
+             0) getTLNTos=$(echo $getTLNTos | grep -oE 'SunOS|Linux' | uniq);
+                ;;
+esac
+set +x
+}
+
+
+function telnet_rsc() {
+
+#getRSC=`expect -c "set timeout 1; \
+#                          eval spawn telnet "$getIP"; \
+#                          send -- root\r; \
+#                          send -- one4cad\r; \
+#                          send -- usershow\r; \
+#                          send -- logout\r; \
+#                          interact;"`
+
+result=$1
+$result &
+pid=$!
+echo "sleep $2; kill $pid" | at now
+wait $pid &> /dev/null
+
+case $? in
+           255) getRSC="Refused"
+                ;;
+           143) getRSC="Timeout"
+                ;;
+             *) getRSC=$(echo ${result} | sed -n 's/.*cuar \([^ ]*\).*/\1/p' | grep -o 'Assigned');
+                if [ "$getRSC" != "Assigned" ] ; then
+                  getRSC="Not Login"
+                else
+		  getRSC="Login/Logout"
+                fi
+                ;;
+esac
+
+}
+
+
+function ssh_read() {
+set -x
+result=$1
+$result &
+pid=$!
+echo "sleep $2; kill $pid" | at now
+wait $pid &> /dev/null
+
+case $? in
+           255) getSSHcomm="Refused"
+                ;;
+           143) getSSHcomm="Timeout"
+                ;;
+             0) getSSHcomm="Connected"
+                ;;
+esac
+
+if [ "$getILO" != "ilo" ]; then
+  getILO=
+fi
+set +x
+}
+
+
+function ssh_os() {
+set -x
+# It won't work if all your RSA key are set
+#getSSHos=`expect -c "set timeout -1;\
+#                   eval spawn ssh -T -qo \"TCPKeepAlive=no\" "$getIP" \"$1\";\
+#                   send -- exit\r;\
+#                   interact;"`
+
+result=$1
+$result &
+pid=$!
+echo "sleep $2; kill $pid" | at now
+wait $pid &> /dev/null
+
+case $? in
+           255) getSSHos="Refused"
+                ;;
+           143) getSSHos="Timeout"
+                ;;
+             0) getSSHos=$(echo $getSSHos | grep -oE 'SunOS|Linux' | uniq);
+                ;;
+ #            *) getSSHos="Unknown"
+ #               ;;
+esac
+set +x
+}
+
+
+# Ilo console might not response
+function ssh_ilo() {
+
+#result="`expect -c "eval spawn ssh -T -qo \"TCPKeepAlive=no\" Admin@"$getIP" ;\
+#                   expect *password:*;\
+#                   send -- Not4u2No\r; \
+#                   expect </>hpiLO-> ; \
+#                   send -- show\r; \
+#                   expect </>hpiLO-> ; \
+#                   send -- exit\r;\
+#                   interact;"`"
+result=$1
+$result &
+pid=$!
+echo "sleep $2; kill $pid" | at now
+wait $pid &> /dev/null
+
+case $? in
+           255) getILO="Refused"
+                ;;
+           143) getILO="Timeout"
+                ;;
+             0) # getILO=$(echo $getILO | grep -oE 'status=0' | uniq);
+                getILO="Login/Logout" ;
+                ;;
+             *) getILO=
+                ;;
+esac
+
+
+}
+
+
+# The web-iLo might not response, it needs reboot and/or HW update
+function ssh_https() {
+
+getHTTPS=`expect -c "set timeout -1;\
+                   eval spawn wget --connect-timeout=1 --tries=1 --no-http-keep-alive \
+                                   --delete-after --no-check-certificate --no-directories \
+                                   --no-cookies --secure-protocol=auto https://"$getIP";\
+                   send -- exit\r;\
+                   interact;"`
+case $? in
+           255) getHTTPS="Refused"
+                ;;
+           143) getHTTPS="Timeout"
+                ;;
+             0) # getHTTPS=$(echo $getHTTPS | grep -oE 'Connected|Refused' | uniq);
+                getHTTPS="Connected" ;
+                ;;
+esac
+
+}
+
+function wdns_cmd() {
+
+                   rm -rf $HOME/bin/abc.ad.trans.mycompany.com
+                   rdesktop -r disk:local="$HOME" -E \
+                   3.11.45.21 -a 16 -k en-us -d tms -u jtorres-admin -p $var \
+                   -s "cmd.exe /K net use x: \\\\tsclient\local\ & x:\bin\dnstrnsf.bat & logoff";
+
+echo "Exit code -> $?"
+echo -e $result"\n" ;
+echo -e ${#result};
+awk '{print $1}' $HOME/bin/abc.ad.trans.mycompany.com
+}
+
+
+
+
+
+
+
+trap ctrl_c SIGINT
+
+now=$(date)
+if [ "${1}" = "" ]
+then
+  checkDate=$(date +%Y%m%d -d "${now}")
+else
+  checkDate=${1}
+fi
+stamp=_$(date +%Y%m%d%H%M%S~%Z -d "${now}")
+yyyy=$(date +%Y -d "${checkDate}")
+mm=$(date +%m -d "${checkDate}")
+dd=$(date +%d -d "${checkDate}")
+script=$(echo ${0} | sed "s|^.*\/||")
+scriptName=$(echo ${script} | sed "s|\..*$||")
+#####################################################################
+prefix="PRD-GET-XYZ"
+title="(${prefix}) DNS/NIS Report"
+html=/var/tmp/${prefix}${scriptName}${stamp}.html
+
+echo "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">" \
+>${html}
+#echo "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\">" \
+#>${html}
+echo "<HTML>" >> ${html}
+echo "<HEAD>" >> ${html}
+echo "<META HTTP-EQUIV=\"Content-Type\" content=\"text/html; charset=iso-8859-1; charset=windows-1252\">" >> ${html}
+echo "<title>${title}</title>" >> ${html}
+
+echo "<STYLE type='text/css' media='all'>" >> ${html}
+echo "  TD.OFF {" >> ${html}
+echo "    background-color: #FFFFFF;" >> ${html}
+echo "  }" >> ${html}
+echo "</STYLE>" >> ${html}
+echo "<STYLE type='text/css' media='all'>" >> ${html}
+echo "  TD.ON {" >> ${html}
+echo "    background-color: #99CCCC;" >> ${html}
+echo "  }" >> ${html}
+echo "</STYLE>" >> ${html}
+echo "<STYLE type='text/css' media='print'>" >> ${html}
+echo "  TD {" >> ${html}
+echo "    background-color: #FFFFFF;" >> ${html}
+echo "  }" >> ${html}
+echo "</STYLE>" >> ${html}
+echo "<STYLE type='text/css' media='all'>" >> ${html}
+echo "  TH {" >> ${html}
+echo "    background-color: #CCCCCC;" >> ${html}
+echo "  }" >> ${html}
+echo "</STYLE>" >> ${html}
+
+echo "</HEAD>" >> ${html}
+echo "<BODY>" >> ${html}
+echo "<CENTER>" >> ${html}
+
+echo "<table border=\"1\" cellspacing=\"0\" cellpadding=\"0\" width=\"1550\">" >> ${html}
+
+echo "<tr><th colspan=\"11\">" >> ${html}
+echo "${title}" >> ${html}
+echo "<br>DNS/NIS Report Cleanup for: ${yyyy}-${mm}-${dd}" >> ${html}
+echo "<br>Report created on: ${now}" >> ${html}
+var='Sensei03';
+TFILE="/var/tmp/${scriptName}.$$.${RANDOM}.${stamp}"
+wdns_cmd;      # Windows DNS Server
+#ypcat hosts | awk '{print $2}' | sort --key=1,8 >> $TFILE
+
+TFILE=`awk '{print $1}' $HOME/bin/abc.ad.trans.mycompany.com  | grep -vwE '\<Returned\>|@|\<3..0\>|\<Command\>|\<Aging\>' | sort --key=1,8 | uniq`
+TTLHSTS=`cat $TFILE | wc -l`
+echo "DNS Records --> $TTLHSTS"
+ypcat hosts | awk '{print $2}' | sort --key=1,8 | grep -vwE '\<#\>|\<CITRIX01GVGS\>|\<EJB01GVGS\>||\<jde\>|\<gsqarun1trange\>' | uniq >> $TFILE
+#ypcat hosts | awk '{print $2}' | sort --key=1,8 | grep "ilo" >> $TFILE
+TTLHSTS=`cat $TFILE | wc -l`
+echo "NIS+DNS Records --> $TTLHSTS"
+
+echo "<br>Total HOSTS Count: ${TTLHSTS}" >> ${html}
+echo "</th></tr>" >> ${html}
+
+echo "<tr><td colspan=\"11\"><br></td></tr>" >> ${html}
+echo "<tr>" >> ${html}
+echo "<th colspan=\"11\">Summary</th>" >> ${html}
+echo "</tr>" >> ${html}
+
+echo "<tr>" >> ${html}
+
+echo "<th colspan=\"1\" width=\"10%\" align=\"center\">IP v4</th>" >> ${html}
+echo "<th colspan=\"1\" width=\"10%\" align=\"center\">HOST</th>" >> ${html}
+echo "<th colspan=\"1\" width=\"4%\" align=\"center\">ICMP</th>" >> ${html}
+echo "<th colspan=\"1\" width=\"10%\" align=\"center\">NIS</th>" >> ${html}
+echo "<th colspan=\"1\" width=\"14%\" align=\"center\">DNS</th>" >> ${html}
+echo "<th colspan=\"1\" width=\"7%\"  align=\"center\">OS</th>" >> ${html}
+echo "<th colspan=\"1\" width=\"10%\" align=\"center\">iLo</th>" >> ${html}
+echo "<th colspan=\"1\" width=\"10%\" align=\"center\">RSC</th>" >> ${html}
+echo "<th colspan=\"1\" width=\"7%\" align=\"center\">SSH</th>" >> ${html}
+echo "<th colspan=\"1\" width=\"14%\" align=\"center\">TELNET</th>" >> ${html}
+echo "<th colspan=\"1\" width=\"11%\" align=\"center\">HTTPS</th>" >> ${html}
+
+echo "</tr>" >> ${html}
+
+#echo "</table>" >> ${html}
+#echo "</CENTER>" >> ${html}
+#echo "</BODY>" >> ${html}
+#echo "</HTML>" >> ${html}
+
+#echo | mutt -s "DNS/NIS hosts entries" -a ${html} juan.torres2@mycompany.com
+#exit
+##################################################
+
+if [ "${TTLHSTS}" = 0 ]; then
+  echo -e "Must have -hostnames- to run \n";
+  exit 1 ;
+fi 
+
+echo "### "`date +%Y/%m/%d" "%H:%M:%S~%Z`" -- $@"
+
+HSTS=1;   # Record  Counter
+
+#uid_passwd # Input all passwords
+#set -x
+
+#vim $TFILE
+SYSTEMS=`grep -v ^# $TFILE`
+#SYSTEMS=`grep -v ^xyzvob04-ilo $TFILE`
+
+for system in $SYSTEMS; do
+         TICTOC=$(echo `date +%Y/%m/%d~%H:%M:%S~%Z`);
+         echo "############################## [ $TICTOC ] ####################################### [ Host # $HSTS of $TTLHSTS ] ########";
+         echo $system ;
+
+         # ICMP Network Layer 3
+         getPING=`ping -c 2 -w 2 -W 2 $system | awk '/packet loss/ {print $6}';sleep 0.0001`
+         case "${getPING}" in
+            "100%") echo "$getPING packet loss"
+                 ;;
+              "0%") echo "$getPING packet loss"
+                 ;;
+              "*")  echo "$getPING undefined"
+                 ;;
+         esac 
+
+          # IP Network Layer 4
+
+         getIP=`ping -c 1 -w 1 -W 1 $system | awk '/PING/ {print $3}' |grep -o '[0-9.]\+[0-9.]\+[0-9.]\+[0-9]'`
+         if [ $? = 1 ]; then
+          getIP=`host -W 1 $system | awk '/address/ {print $4}'`
+         fi
+         echo "Host IP -> $getIP"
+
+         # NIS Application Layer 7
+         getNISIP=`ypcat hosts | grep -oE "${getIP}"  --max-count=1 | uniq`
+         getNISHN=`ypcat hosts | grep -oE "${system}" --max-count=1 | uniq`
+         echo "NIS Ip    -> $getNISIP"
+         echo "NIS HName -> $getNISHN" 
+
+         # DNS Application Layer 7
+         getFQDN=`nslookup $system | awk '/Name:/ {print $2}' | cut -d"." -f2-6`
+         echo "FQDN -> $getFQDN"
+
+         # Telnet Application Layer 7
+         if [ "$getPING" = 0% ]; then
+           telnet_read        
+           echo "Telnet READ -> $getTLNTcomm"
+         fi
+         # RSC in progress
+         getRSC=${getNISHN:(-3)}
+         if [ "$getRSC" = "rsc" ] && [ "$getPING" = 0% ]
+           then
+           if [ "$getTLNTcomm" = "Connected"  ]; then
+              telnet_rsc "`expect -c "set timeout -1; eval spawn telnet "$getIP"; send -- root\r; send -- one4cad\r; send -- usershow\r; send -- logout\r; interact;"`" 5
+              echo "RSC READ -> $getRSC"
+           fi
+         else
+           getRSC=         
+         fi
+         # Telnet OS Login to get the OS
+#set -x
+         getNotRSC=${getNISHN:(-3)}
+         if [ "$getNotRSC" != "rsc" ] && [ "$getPING" = 0% ] && [ "$getNotRSC" != "ilo" ]
+           then
+           if [ "$getTLNTcomm" = "Connected"  ]; then
+            echo "Telnet OS Login to get the OS -Under review"
+#           telnet_os "`expect -c "set timeout -1; eval spawn telnet "$getIP"; expect *login:*; send -- root\r; expect *Password:*; send -- one4cad\r; expect #; send -- uname\r; expect #; send -- exit\r; interact;"`" 5
+            echo "OS -> $getTLNTos"
+           fi
+         fi
+
+         # SHH OS Login to get the OS
+         getNotILO=${getNISHN:(-3)}
+         if [ "$getNotILO" != "rsc" ] && [ "$getPING" = 0% ] && [ "$getNotILO" != "ilo" ]
+           then	
+           #echo "SHH OS Login to get the OS -Under Review"
+           #ssh_os 'uname -s'
+           #echo "OS -> $getSSHos"
+#          ssh_os "`expect -c "set timeout -1; eval spawn ssh -T -qo \"TCPKeepAlive=no\" root@"$getIP" \"uname\"; expect *password*; send -- one4cad\r;expect *#*;  send -- exit\r; interact;"`" 5 
+           echo "OS -> $getSSHos"
+         fi
+#set +x
+         # iLo in progress
+         getILO=${getNISHN:(-3)}
+         if [ "$getILO" != "rsc" ] && [ "$getPING" = 0% ] && [ "$getILO" = "ilo" ]
+           then
+           ssh_read "ssh -T ${system}" 1
+           echo "SSH iLo READ -> $getSSHcomm"
+             if [ "$getSSHcomm" = "Connected" ] ;
+               then
+                echo "ssh_ilo"
+                # ssh_os "`expect -c "set timeout -1; eval spawn ssh -T -qo \"TCPKeepAlive=no\" "$getIP" \"uname\"; send -- exit\r; interact;"`" 5
+                ssh_ilo  "`expect -c "set timeout -1; eval spawn ssh -T -qo \"TCPKeepAlive=no\" Admin@"$getIP" expect *password:*; send -- Not4u2No\r; expect </>hpiLO-> ; send -- show\r ; expect </>hpiLO-> ; send -- exit\r; interact;"`" 5
+                echo "iLo READ -> $getILO"
+             fi
+         else
+           getILO=
+         fi
+         # SSH Application Layer 7
+         if [ "$getPING" = 0% ] && [ "$getNotRSC" != "rsc" ] && [ "$getNotILO" != "ilo" ] ; then
+           echo "SSH Application Layer 7"
+           ssh_read "ssh -T ${system}" 1
+           echo "SSH READ -> $getSSHcomm"
+         fi
+
+         # HTTP Application Layer 7
+         getHTTPS=${getNISHN:(-3)}
+         if [ "$getHTTPS" = "ilo" ] && [ "$getPING" = 0% ] && [ "$getHTTPS" != "rsc" ] 
+           then
+            ssh_https
+            echo "HTTPS iLo READ -> $getHTTPS"
+         else
+           getHTTPS=
+         fi
+         
+         echo "*****";
+
+         echo "<tr>" >> ${html}
+
+         echo "<th colspan=\"1\" width=\"10%\" align=\"center\"> ${getIP} </th>" >> ${html}
+         echo "<th colspan=\"1\" width=\"10%\" align=\"center\"> ${getNISHN} </th>" >> ${html}
+         echo "<th colspan=\"1\" width=\"4%\"  align=\"center\"> ${getPING} </th>" >> ${html}
+         echo "<th colspan=\"1\" width=\"10%\" align=\"center\"> ${getNISIP} </th>" >> ${html}
+         echo "<th colspan=\"1\" width=\"14%\" align=\"center\"> ${getFQDN} </th>" >> ${html}
+#         echo "<th colspan=\"1\" width=\"7%\"  align=\"center\"> <pre>$(if [ "$getTLNTos" != "" ]; then echo ${getTLNTos}; elif [ "$getSSHos" != "" ]; then echo  ${getSSHos}; fi)</pre> </th>" >> ${html}
+
+         echo "<th colspan=\"1\" width=\"7%\"  align=\"center\"> <pre>$(if [ "$getTLNTos" != "" ]; then 
+                                                                          if [ "$getTLNTos" = "Timeout" ]; then
+                                                                              echo  "<font color=blue>" ${getTLNTos} "</font>" ;
+                                                                          elif [ "$getTLNTos" = "Not Login" ]; then
+                                                                              echo  "<font color=red>" ${getTLNTos} "</font>" ;
+                                                                          elif [ "$getTLNTos" = "Login/Logout" ]; then
+                                                                              echo  "<font color=green>" ${getTLNTos} "</font>" ;
+                                                                          elif [ "$getTLNTos" = "Unable to connect" ]; then
+                                                                              echo  "<font color=red>" ${getTLNTos} "</font>" ;
+                                                                          elif [ "$getTLNTos" = "Connected" ]; then
+                                                                              echo  "<font color=green>" ${getTLNTos} "</font>" ;
+                                                                          elif [ "$getTLNTos" = "Linux" ]; then
+                                                                              echo  "<font color=red>" ${getTLNTos} "</font>" ;
+                                                                          elif [ "$getTLNTos" = "SunOS" ]; then
+                                                                              echo  "<font color=purple>" ${getTLNTos} "</font>" ;
+                                                                          elif [ "$getTLNTos" = "Refused" ]; then
+                                                                              echo  "<font color=red>" ${getTLNTos} "</font>" ;
+                                                                          else
+                                                                              echo  "<font color=black>" ${getTLNTos} "</font>" ;
+                                                                          fi
+                                                                        elif [ "$getSSHos" != "" ]; then 
+                                                                          if [ "$getSSHos" = "Timeout" ]; then
+                                                                              echo  "<font color=blue>" ${getSSHos} "</font>" ;
+                                                                          elif [ "$getSSHos" = "Not Login" ]; then
+                                                                              echo  "<font color=red>" ${getSSHos} "</font>" ;
+                                                                          elif [ "$getSSHos" = "Login/Logout" ]; then
+                                                                              echo  "<font color=green>" ${getSSHos} "</font>" ;
+                                                                          elif [ "$getSSHos" = "Unable to connect" ]; then
+                                                                              echo  "<font color=red>" ${getSSHos} "</font>" ;
+                                                                          elif [ "$getSSHos" = "Connected" ]; then
+                                                                              echo  "<font color=green>" ${getSSHos} "</font>" ;
+                                                                          elif [ "$getSSHos" = "Linux" ]; then
+                                                                              echo  "<font color=red>" ${getTLNTos} "</font>" ;
+                                                                          elif [ "$getSSHos" = "SunOS" ]; then
+                                                                              echo  "<font color=purple>" ${getTLNTos} "</font>" ;
+                                                                          elif [ "$getSSHos" = "Refused" ]; then
+                                                                              echo  "<font color=red>" ${getSSHos} "</font>" ;
+                                                                          else
+                                                                              echo  "<font color=black>" ${getSSHos} "</font>" ;
+                                                                          fi  
+                                                                        fi)</pre> </th>" >> ${html}
+
+#        echo "<th colspan=\"1\" width=\"10%\" align=\"center\"> ${getILO} </th>" >> ${html}
+         echo "<th colspan=\"1\" width=\"10%\" align=\"center\"> <pre>$(if [ "$getILO" = "Timeout" ]; then
+                                                 echo  "<font color=blue>" ${getILO} "</font>" ;
+                                               elif [ "$getILO" = "Not Login" ]; then
+                                                 echo  "<font color=red>" ${getILO} "</font>" ;
+                                               elif [ "$getILO" = "Login/Logout" ]; then
+                                                 echo  "<font color=green>" ${getILO} "</font>" ;
+                                               elif [ "$getILO" = "Unable to connect" ]; then
+                                                 echo  "<font color=red>" ${getILO} "</font>" ;
+                                               elif [ "$getILO" = "Connected" ]; then
+                                                 echo  "<font color=green>" ${getILO} "</font>" ;
+                                               elif [ "$getILO" = "Refused" ]; then
+                                                 echo  "<font color=red>" ${getILO} "</font>" ;
+                                               else
+                                                 echo  "<font color=black>" ${getILO} "</font>" ;
+                                               fi)</pre> </th>" >> ${html}
+
+#        echo "<th colspan=\"1\" width=\"10%\" align=\"center\"> ${getRSC} </th>" >> ${html}
+         echo "<th colspan=\"1\" width=\"10%\" align=\"center\"> <pre>$(if [ "$getRSC" = "Timeout" ]; then
+                                                 echo  "<font color=blue>" ${getRSC} "</font>" ;
+                                               elif [ "$getRSC" = "Not Login" ]; then
+                                                 echo  "<font color=red>" ${getRSC} "</font>" ;
+                                               elif [ "$getRSC" = "Login/Logout" ]; then
+                                                 echo  "<font color=green>" ${getRSC} "</font>" ;
+                                               elif [ "$getRSC" = "Unable to connect" ]; then
+                                                 echo  "<font color=red>" ${getRSC} "</font>" ;
+                                               elif [ "$getRSC" = "Connected" ]; then
+                                                 echo  "<font color=green>" ${getRSC} "</font>" ;
+                                               elif [ "$getRSC" = "Refused" ]; then
+                                                 echo  "<font color=red>" ${getRSC} "</font>" ;
+                                               else
+                                                 echo  "<font color=black>" ${getRSC} "</font>" ;
+                                               fi)</pre> </th>" >> ${html}
+#        echo "<th colspan=\"1\" width=\"10%\" align=\"center\"> ${getSSHcomm} </th>" >> ${html}
+         echo "<th colspan=\"1\" width=\"7%\" align=\"center\"> <pre>$(if [ "$getSSHcomm" = "Timeout" ]; then
+                                                                           echo  "<font color=blue>" ${getSSHcomm} "</font>" ;
+                                                                        elif [ "$getSSHcomm" = "Not Login" ]; then
+                                                                           echo  "<font color=red>" ${getSSHcomm} "</font>" ;
+                                                                        elif [ "$getSSHcomm" = "Login/Logout" ]; then
+                                                                           echo  "<font color=green>" ${getSSHcomm} "</font>" ;
+                                                                        elif [ "$getSSHcomm" = "Unable to connect" ]; then
+                                                                           echo  "<font color=red>" ${getSSHcomm} "</font>" ;
+                                                                        elif [ "$getSSHcomm" = "Connected" ]; then
+                                                                           echo  "<font color=green>" ${getSSHcomm} "</font>" ;
+                                                                        elif [ "$getSSHcomm" = "Refused" ]; then
+                                                                          echo  "<font color=red>" ${getSSHcomm} "</font>" ;
+                                                                        else
+                                                                          echo  "<font color=black>" ${getSSHcomm} "</font>" ;
+                                                                        fi)</pre> </th>" >> ${html}
+
+#        echo "<th colspan=\"1\" width=\"12%\" align=\"center\"> ${getTLNTcomm} </th>" >> ${html}
+         echo "<th colspan=\"1\" width=\"14%\" align=\"center\"> <pre>$(if [ "$getTLNTcomm" = "Timeout" ]; then
+                                                                          echo  "<font color=blue>" ${getTLNTcomm} "</font>" ;
+                                                                        elif [ "$getTLNTcomm" = "Not Login" ]; then
+                                                                          echo  "<font color=red>" ${getTLNTcomm} "</font>" ;
+                                                                        elif [ "$getTLNTcomm" = "Login/Logout" ]; then
+                                                                          echo  "<font color=green>" ${getTLNTcomm} "</font>" ;
+                                                                        elif [ "$getTLNTcomm" = "Unable to connect" ]; then
+                                                                          echo  "<font color=red>" ${getTLNTcomm} "</font>" ;
+                                                                        elif [ "$getTLNTcomm" = "Connected" ]; then
+                                                                          echo  "<font color=green>" ${getTLNTcomm} "</font>" ;
+                                                                        elif [ "$getTLNTcomm" = "Refused" ]; then
+                                                                          echo  "<font color=red>" ${getTLNTcomm} "</font>" ;
+                                                                        else
+                                                                           echo  "<font color=black>" ${getTLNTcomm} "</font>" ;
+                                                                        fi)</pre> </th>" >> ${html}
+
+#        echo "<th colspan=\"1\" width=\"10%\" align=\"center\"> ${getHTTPS} </th>" >> ${html}
+         echo "<th colspan=\"1\" width=\"11%\" align=\"center\"> <pre>$(if [ "$getHTTPS" = "Timeout" ]; then
+                                                                          echo  "<font color=blue>" ${getHTTPS} "</font>" ;
+                                                                        elif [ "$getHTTPS" = "Not Login" ]; then
+                                                                          echo  "<font color=red>" ${getHTTPS} "</font>" ;
+                                                                        elif [ "$getHTTPS" = "Login/Logout" ]; then
+                                                                          echo  "<font color=green>" ${getHTTPS} "</font>" ;
+                                                                        elif [ "$getHTTPS" = "Unable to connect" ]; then
+                                                                          echo  "<font color=red>" ${getHTTPS} "</font>" ;
+                                                                        elif [ "$getHTTPS" = "Connected" ]; then
+                                                                          echo  "<font color=green>" ${getHTTPS} "</font>" ;
+                                                                        elif [ "$getHTTPS" = "Refused" ]; then
+                                                                          echo  "<font color=red>" ${getHTTPS} "</font>" ;
+                                                                        else
+                                                                           echo  "<font color=black>" ${getHTTPS} "</font>" ;
+                                                                        fi)</pre> </th>" >> ${html}
+         echo "</tr>" >> ${html}
+
+         (( HSTS ++ )) ;
+
+         var_init
+
+done
+
+echo "### "`date +%Y/%m/%d" "%H:%M:%S~%Z`""
+
+echo "</table>" >> ${html}
+echo "</CENTER>" >> ${html}
+echo "</BODY>" >> ${html}
+echo "</HTML>" >> ${html}
+
+export MAILTO="juan.torres2@mycompany.com"
+export CONTENT="${html}"
+export SUBJECT="DNS/NIS Hosts Report"
+(
+ echo "Subject: $SUBJECT"
+ echo "MIME-Version: 1.0"
+ echo "Content-Type: text/html"
+ echo "Content-Disposition: inline"
+ cat $CONTENT
+) | /usr/sbin/sendmail $MAILTO
+echo | mutt -s ${SUBJECT} -a ${html} $MAILTO 
+#rm -rf $TFILE $html 2>&1
