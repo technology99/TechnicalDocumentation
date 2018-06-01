@@ -19,5 +19,5 @@ end
 
 service 'snmpd' do
    action [ :start, :enable ]
-   not_if "rpm -qa | grep -qx 'snmp'"
+   not_if "rpm -qa | grep -qa 'snmp'"
 end
