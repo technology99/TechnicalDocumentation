@@ -1,0 +1,27 @@
+"Count the Occurence of a Number"
+Time limit 90 minutes
+
+How many times does '2' appear when
+you count beetween 0 and 100? Write
+a program to print the count for any
+given upper bound integer N.
+
+Input
+
+Input consists of a number n, where
+the program needs to count the number
+of '2' appearing between 0 and 'n'.(inclusive)
+
+Output
+
+Print the number of 2's appearing between 0
+and 'n'. (See sample input/output)
+Print 0 if n is negative. Code evaluation
+is based on output, please do NOT print
+anything else.
+
+Sample Input
+25
+
+Sample Output
+9
