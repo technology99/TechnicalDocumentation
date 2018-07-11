@@ -1,0 +1,12 @@
+#!/bin/python
+
+t = 0
+for i in range(0,101):
+ s = str(i)
+ if "2" in s:
+   print("This number has a '2' -> " + s)
+   t += 1
+print("="*30)
+if t < 0:
+  t = 0
+print("Total of '2' found the number list -> " + str(t))

@@ -1,0 +1,18 @@
+#!/bin/python
+
+highest_number = 0
+T = [ 1,2,2,3,1 ]
+N = set()
+F = set()
+
+for i in T:
+  if i not in F:
+    F.add(i)
+  else:
+    N.add(i)
+
+for j in N:
+   if j > highest_number:
+     highest_number = j
+
+print ("Freqency " + str(highest_number))
