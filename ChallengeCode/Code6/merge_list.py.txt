@@ -1,0 +1,23 @@
+#!/bin/python
+
+# Question, write a function to take two lists, input1 and input2, as the input, and return a merged list as below
+# input1 = [1, 2, 3, 4]
+# input2 = ["a", "b", "c", "d", "e"]
+# return [1, "a", 2, "b", 3, "c", 4, "d", "e"]
+
+def two_lists(input1, input2):
+    result = []
+
+    for pair in zip(input1, input2):
+        result.extend(pair)
+
+    if len(input1) != len(input2):
+        lsts = [input1, input2]
+        smallest = min(lsts, key = len)
+        biggest = max(lsts, key = len)
+        rest = biggest[len(smallest):]
+        result.extend(rest)
+    print result
+input1 = [1,2,3,4]
+input2 = ["a","b","c","d","e"]
+two_lists(input1, input2)
