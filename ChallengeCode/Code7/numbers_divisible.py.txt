@@ -1,0 +1,33 @@
+#!/bin/python
+'''
+SYMPTOM: Interview request for 'Change Health Care' San Mateo, CA
+
+DATES: 10/12/2020 10:00AM EST, 10/14/2020 12:30PM EST
+
+MANAGER: Rishi Srivastava
+
+PANEL: Maram Durgaprasad, Rama Mylipally
+
+CHALLENGE CODE: Loop thru 1 to 100 numbers is divisible by 3 output should be "fizz"
+if the number is divisible by 5 then output should be "buzzy"
+if the number is divisible by 5 and 3 then output should be "fibuzzy"
+every other number just  print the number
+
+CODE STATUS: Completed in full in 20 minutes
+
+OUTCOME: JOB NOT OFFERED
+'''
+
+for n in range(1,100):
+  mod5 = n % 5
+  mod3 = n % 3
+  if mod5 == 0 and mod3 == 0:
+    print ("fibuzzy")
+  else:
+    if mod5 == 0:
+      print ("buzzy")
+    else:
+     if mod3 == 0:
+       print ("fizz")
+     else:
+       print n
