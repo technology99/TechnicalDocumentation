@@ -4,8 +4,8 @@
 - LINKED-IN: https://www.linkedin.com/in/marktinderholt/
 - TOOL     : https://codesandbox.io/s/crazy-night-10how
 - CHALLENGE CODE:
-####     Create an Azure storage account resource
-####     Create as module
+  - Create a n Azure storage account resource
+  - Create as module
 - CODE STATUS: Completed in full in 25 minutes. 
-####              Extendend time was allows to improve syntax 
+  - Extendend time was allows to improve syntax 
 - OUTCOME: Job was offered, then four days later Job was cancelled.
