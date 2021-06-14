@@ -1,8 +1,8 @@
 - SYMPTOM  : Interview request for 'First Data Bank'
 - DATE     : Friday June 4th 2021 @ 15:30 EST
 - MANAGER  : Mark Tinderholt @ Persistance
-- LINKED-IN: [Interviewer](doc:https://www.linkedin.com/in/marktinderholt/){:target="_blank"}
-- TOOL     : [Tool](https://codesandbox.io/s/crazy-night-10how){:target="_blank"}
+- LINKED-IN: [Interviewer]({:target="_blank"}https://www.linkedin.com/in/marktinderholt/)
+- TOOL     : [Tool]({:target="_blank"}https://codesandbox.io/s/crazy-night-10how)
 - CHALLENGE CODE:
   - Create a n Azure storage account resource
   - Create as module
